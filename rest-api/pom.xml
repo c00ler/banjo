@@ -21,7 +21,9 @@
     </dependencies>
 
     <build>
-        <finalName>${parent.artifactId}-${artifactId}-${version}</finalName>
+        <finalName>
+            ${project.parent.artifactId}-${project.artifactId}-${project.version}
+        </finalName>
     </build>
 
 </project>
