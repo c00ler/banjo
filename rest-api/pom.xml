@@ -10,7 +10,7 @@
     <artifactId>rest-api</artifactId>
     <packaging>war</packaging>
 
-    <name>rest-api</name>
+    <name>Banjo :: rest-api</name>
 
     <dependencies>
         <dependency>
@@ -19,5 +19,9 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <finalName>${parent.artifactId}-${artifactId}-${version}</finalName>
+    </build>
 
 </project>

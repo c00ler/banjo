@@ -8,3 +8,8 @@
 # Build artifacts #
 ###################
 target
+
+# Temp files #
+##############
+*.tmp
+
