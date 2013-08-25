@@ -1,44 +1,53 @@
 package com.gmail.avenderov.impl;
 
 import com.gmail.avenderov.api.Config;
-import com.gmail.avenderov.api.ConfigType;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
  * User: avenderov
  */
+@Document(collection = "props")
 public class PropertyConfig implements Config<Map<String, String>> {
 
-    @Override
-    public String getId() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
+    @Id
+    private String name;
 
-    @Override
-    public long getRevision() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
-    }
+    private int revision;
+
+    private Date createdAt;
+
+    private Date lastModifiedAt;
+
+    private List<String> parents;
 
     @Override
     public String getName() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return name;
+    }
+
+    @Override
+    public int getRevision() {
+        return revision;
     }
 
     @Override
     public Date getCreatedAt() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return createdAt;
     }
 
     @Override
     public Date getLastModifiedAt() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return lastModifiedAt;
     }
 
     @Override
-    public ConfigType getConfigType() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    public Type getConfigType() {
+        return Type.TEXT;
     }
 
     @Override
