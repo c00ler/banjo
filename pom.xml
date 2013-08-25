@@ -28,6 +28,7 @@
     <modules>
         <module>core</module>
         <module>rest-api</module>
+        <module>java-api</module>
     </modules>
 
     <dependencyManagement>

@@ -12,18 +12,28 @@
 
     <name>Banjo :: rest-api</name>
 
+    <properties>
+        <jersey.version>2.2</jersey.version>
+    </properties>
+
     <dependencies>
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet-core</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gmail.avenderov</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <finalName>
-            ${project.parent.artifactId}-${project.artifactId}-${project.version}
-        </finalName>
-    </build>
 
 </project>
