@@ -16,30 +16,27 @@ public class PropertyConfigFactoryTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateNewPropertyConfigWithBlankName() {
-        PropertyConfigFactory.newPropertyConfig("", null, null, ImmutableMap.of("key1", "value1"));
+        PropertyConfigFactory.newPropertyConfig("", null, ImmutableMap.of("key1", "value1"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateNewPropertyConfigWithoutProperties() {
-        PropertyConfigFactory.newPropertyConfig("test", null, null, ImmutableMap.<String, String>of());
+        PropertyConfigFactory.newPropertyConfig("test", null, ImmutableMap.<String, String>of());
     }
 
     @Test
-    public void testBlankParentsAndChildrenAreNotAllowed() {
-        final PropertyConfig propertyConfig = PropertyConfigFactory.newPropertyConfig("test", Sets.newHashSet("",
-                "parent"), Sets.newHashSet("", "child"), ImmutableMap.of("key1", "value1"));
+    public void testBlankParentsAreNotAllowed() {
+        final PropertyConfig propertyConfig = PropertyConfigFactory.newPropertyConfig("test",
+                Sets.newHashSet("", "parent"), ImmutableMap.of("key1", "value1"));
 
         assertThat("Wrong number of parents in config", propertyConfig.getParents(), hasSize(1));
         assertThat("Wrong parent config value", Iterables.getOnlyElement(propertyConfig.getParents()),
                 is(equalTo("parent")));
-        assertThat("Wrong number of children in config", propertyConfig.getChildren(), hasSize(1));
-        assertThat("Wrong child config value", Iterables.getOnlyElement(propertyConfig.getChildren()),
-                is(equalTo("child")));
     }
 
     @Test
     public void testBlankPropertyKeysAndValuesAreNotAllowed() {
-        final PropertyConfig propertyConfig = PropertyConfigFactory.newPropertyConfig("test", null, null,
+        final PropertyConfig propertyConfig = PropertyConfigFactory.newPropertyConfig("test", null,
                 ImmutableMap.of("key1", "value1", "", "value2", "key3", ""));
 
         assertThat("Wrong number of properties in config", propertyConfig.getContent().entrySet(), hasSize(1));
@@ -48,13 +45,14 @@ public class PropertyConfigFactoryTest {
 
     @Test
     public void testCreateNewPropertyConfig() {
-        final PropertyConfig propertyConfig = PropertyConfigFactory.newPropertyConfig("test", null, null,
+        final PropertyConfig propertyConfig = PropertyConfigFactory.newPropertyConfig("test", null,
                 ImmutableMap.of("key1", "value1"));
 
         assertThat("Wrong config revision", propertyConfig.getRevision(), is(1));
         assertThat("Created and modified dates should be equal", propertyConfig.getCreatedAt(),
                 is(equalTo(propertyConfig.getLastModifiedAt())));
         assertThat("Wrong config type", propertyConfig.getConfigType(), is(equalTo(Config.Type.TEXT)));
+        assertThat("New config shouldn't have children", propertyConfig.getChildren(), hasSize(0));
     }
 
 }

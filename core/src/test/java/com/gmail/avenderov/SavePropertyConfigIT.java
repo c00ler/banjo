@@ -41,7 +41,7 @@ public class SavePropertyConfigIT {
     @Test
     public void testSavePropertyConfig() {
         final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(
-                this.getClass().getSimpleName() + "_" + Long.toString(System.currentTimeMillis()), null, null,
+                this.getClass().getSimpleName() + "_" + Long.toString(System.currentTimeMillis()), null,
                 ImmutableMap.of("key1", "value1", "key2", "value2", "key3", "value3"));
 
         mongoTemplate.save(propertyConfigToSave);

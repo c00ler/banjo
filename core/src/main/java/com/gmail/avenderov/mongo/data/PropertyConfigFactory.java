@@ -19,15 +19,23 @@ public class PropertyConfigFactory {
     private PropertyConfigFactory() {
     }
 
+    /**
+     * New config can't have children. Children will be added during adding config that will have this config as
+     * parent.
+     *
+     * @param name
+     * @param parents
+     * @param properties
+     * @return
+     */
     public static PropertyConfig newPropertyConfig(final String name, final Set<String> parents,
-                                                   final Set<String> children, final Map<String, String> properties) {
+                                                   final Map<String, String> properties) {
         checkArgument(isNotBlank(name), "name must not be blank");
         checkArgument(isNotEmpty(properties), "properties must not be empty");
 
         final Date now = Calendar.getInstance().getTime();
 
-        return new PropertyConfig(name, 1, now, now, removeNullAndBlankValue(parents),
-                removeNullAndBlankValue(children),
+        return new PropertyConfig(name, 1, now, now, removeNullAndBlankValue(parents), null,
                 Maps.filterEntries(properties, new Predicate<Map.Entry<String, String>>() {
 
                     @Override
