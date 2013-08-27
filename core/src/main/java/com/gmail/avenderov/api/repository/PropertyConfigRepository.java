@@ -1,7 +1,10 @@
 package com.gmail.avenderov.api.repository;
 
 import com.gmail.avenderov.mongo.data.PropertyConfig;
+import com.google.common.base.Optional;
 import org.springframework.data.mongodb.core.MongoTemplate;
+
+import java.util.Map;
 
 /**
  * @author Alexey Venderov
@@ -30,5 +33,21 @@ public interface PropertyConfigRepository {
      * @return {@code true} if config checkConfigExist, {@code false} otherwise
      */
     boolean checkConfigExist(String name);
+
+    /**
+     * Returns config by its name.
+     *
+     * @param name config name to find
+     * @return
+     */
+    Optional<PropertyConfig> findConfig(String name);
+
+    /**
+     * Queries for config and all its parents. Result is returned in form of map with config names used as keys.
+     *
+     * @param name config name to find
+     * @return empty map if config with specified name doesn't exist. Returned map is immutable
+     */
+    Map<String, PropertyConfig> findConfigWithParents(String name);
 
 }

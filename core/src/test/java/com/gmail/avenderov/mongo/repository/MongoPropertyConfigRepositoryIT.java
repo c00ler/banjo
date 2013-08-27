@@ -1,8 +1,9 @@
-package com.gmail.avenderov;
+package com.gmail.avenderov.mongo.repository;
 
 import com.gmail.avenderov.api.repository.PropertyConfigRepository;
 import com.gmail.avenderov.mongo.data.PropertyConfig;
 import com.gmail.avenderov.mongo.data.PropertyConfigFactory;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -17,17 +18,16 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-import static org.springframework.data.mongodb.core.query.Query.query;
 
 /**
  * @author Alexey Venderov
  */
-public class SavePropertyConfigIT {
+public class MongoPropertyConfigRepositoryIT {
 
     private ConfigurableApplicationContext applicationContext;
 
@@ -48,13 +48,11 @@ public class SavePropertyConfigIT {
     }
 
     private static String randomName() {
-        return SavePropertyConfigIT.class.getSimpleName() + "_" + RandomStringUtils.randomAlphanumeric(20);
+        return MongoPropertyConfigRepositoryIT.class.getSimpleName() + "_" + RandomStringUtils.randomAlphanumeric(20);
     }
 
     @Test
     public void testInsertConfigWithParents() {
-        final MongoTemplate mongoTemplate = propertyConfigRepository.getMongoTemplate();
-
         final PropertyConfig parent1PropertyConfig = PropertyConfigFactory.newPropertyConfig(randomName(), null,
                 ImmutableMap.of("key1", "value1"));
         propertyConfigRepository.insert(parent1PropertyConfig);
@@ -70,8 +68,10 @@ public class SavePropertyConfigIT {
                 ImmutableMap.of("key3", "value3"));
         propertyConfigRepository.insert(propertyConfigToSave);
         assertThat("Wrong number of config files in collection", countConfigFilesInCollection(), is(3L));
-        final PropertyConfig loadedPropertyConfig = mongoTemplate.findOne(query(where("_id").is(propertyConfigToSave
-                .getName())), PropertyConfig.class);
+        final Optional<PropertyConfig> optionalLoadedPropertyConfig =
+                propertyConfigRepository.findConfig(propertyConfigToSave.getName());
+        assertThat("Config was not found in database", optionalLoadedPropertyConfig.isPresent(), is(true));
+        final PropertyConfig loadedPropertyConfig = optionalLoadedPropertyConfig.get();
         assertThat("Wrong parents in loaded config", loadedPropertyConfig.getParents(),
                 contains(parent1PropertyConfig.getName(), parent2PropertyConfig.getName()));
         assertThat("Loaded config has wrong revision", loadedPropertyConfig.getRevision(), is(1));
@@ -156,6 +156,54 @@ public class SavePropertyConfigIT {
 
         assertThat("Config should exist in database after it has been inserted",
                 propertyConfigRepository.checkConfigExist(name), is(true));
+    }
+
+    @Test
+    public void testFindConfigWithParentsWhenThereAreNoParentsInConfig() {
+        final String name = randomName();
+        assertThat("Empty map has to be returned if there is no such config in database",
+                propertyConfigRepository.findConfigWithParents(name).entrySet(), hasSize(0));
+
+        final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(name, null,
+                ImmutableMap.of("key1", "value1"));
+        propertyConfigRepository.insert(propertyConfigToSave);
+        final Map<String, PropertyConfig> configs = propertyConfigRepository.findConfigWithParents(name);
+
+        assertThat("Only one config has to be in the map", configs.entrySet(), hasSize(1));
+        assertThat("Config name was not found in the map", configs, hasKey(name));
+    }
+
+    @Test
+    public void testFindConfigWithParents() {
+        final PropertyConfig parent1PropertyConfig = PropertyConfigFactory.newPropertyConfig(randomName(), null,
+                ImmutableMap.of("key1", "value1"));
+        propertyConfigRepository.insert(parent1PropertyConfig);
+        assertThat("Parent config 1 was not found in database",
+                propertyConfigRepository.checkConfigExist(parent1PropertyConfig.getName()), is(true));
+
+        final PropertyConfig parent2PropertyConfig = PropertyConfigFactory.newPropertyConfig(randomName(), null,
+                ImmutableMap.of("key2", "value2"));
+        propertyConfigRepository.insert(parent2PropertyConfig);
+        assertThat("Parent config 2 was not found in database",
+                propertyConfigRepository.checkConfigExist(parent2PropertyConfig.getName()), is(true));
+
+        final PropertyConfig anotherPropertyConfig = PropertyConfigFactory.newPropertyConfig(randomName(),
+                ImmutableSet.of(parent1PropertyConfig.getName()),
+                ImmutableMap.of("key2", "value2"));
+        propertyConfigRepository.insert(anotherPropertyConfig);
+        assertThat("Config was not found in database",
+                propertyConfigRepository.checkConfigExist(anotherPropertyConfig.getName()), is(true));
+
+        final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(randomName(),
+                ImmutableSet.of(parent1PropertyConfig.getName(), parent2PropertyConfig.getName()),
+                ImmutableMap.of("key3", "value3"));
+        propertyConfigRepository.insert(propertyConfigToSave);
+
+        final Map<String, PropertyConfig> configs =
+                propertyConfigRepository.findConfigWithParents(propertyConfigToSave.getName());
+        assertThat("Wrong number of config files in returned map", configs.entrySet(), hasSize(3));
+        assertThat("Returned map contains wrong config files", configs, allOf(hasKey(propertyConfigToSave.getName()),
+                hasKey(parent1PropertyConfig.getName()), hasKey(parent2PropertyConfig.getName())));
     }
 
     @After
