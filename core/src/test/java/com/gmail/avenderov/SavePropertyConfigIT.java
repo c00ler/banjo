@@ -58,26 +58,27 @@ public class SavePropertyConfigIT {
         final PropertyConfig parent1PropertyConfig = PropertyConfigFactory.newPropertyConfig(randomName(), null,
                 ImmutableMap.of("key1", "value1"));
         propertyConfigRepository.insert(parent1PropertyConfig);
-        assertThat("Wrong number of config files in collection", mongoTemplate.count(null, PropertyConfig.class),
-                is(1L));
+        assertThat("Wrong number of config files in collection", countConfigFilesInCollection(), is(1L));
 
         final PropertyConfig parent2PropertyConfig = PropertyConfigFactory.newPropertyConfig(randomName(), null,
                 ImmutableMap.of("key2", "value2"));
         propertyConfigRepository.insert(parent2PropertyConfig);
-        assertThat("Wrong number of config files in collection", mongoTemplate.count(null, PropertyConfig.class),
-                is(2L));
+        assertThat("Wrong number of config files in collection", countConfigFilesInCollection(), is(2L));
 
         final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(randomName(),
                 ImmutableSet.of(parent1PropertyConfig.getName(), parent2PropertyConfig.getName()),
                 ImmutableMap.of("key3", "value3"));
         propertyConfigRepository.insert(propertyConfigToSave);
-        assertThat("Wrong number of config files in collection", mongoTemplate.count(null, PropertyConfig.class),
-                is(3L));
+        assertThat("Wrong number of config files in collection", countConfigFilesInCollection(), is(3L));
         final PropertyConfig loadedPropertyConfig = mongoTemplate.findOne(query(where("_id").is(propertyConfigToSave
                 .getName())), PropertyConfig.class);
         assertThat("Wrong parents in loaded config", loadedPropertyConfig.getParents(),
                 contains(parent1PropertyConfig.getName(), parent2PropertyConfig.getName()));
         assertThat("Loaded config has wrong revision", loadedPropertyConfig.getRevision(), is(1));
+    }
+
+    private long countConfigFilesInCollection() {
+        return propertyConfigRepository.getMongoTemplate().count(null, PropertyConfig.class);
     }
 
     @Test(expected = DataIntegrityViolationException.class)
@@ -86,9 +87,7 @@ public class SavePropertyConfigIT {
                 ImmutableMap.of("key1", "value1"));
 
         propertyConfigRepository.insert(parentPropertyConfig);
-        final MongoTemplate mongoTemplate = propertyConfigRepository.getMongoTemplate();
-        assertThat("Wrong number of config files in collection", mongoTemplate.count(null, PropertyConfig.class),
-                is(1L));
+        assertThat("Wrong number of config files in collection", countConfigFilesInCollection(), is(1L));
 
         final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(randomName(),
                 ImmutableSet.of(parentPropertyConfig.getName(), "parent"),
@@ -114,9 +113,7 @@ public class SavePropertyConfigIT {
                 ImmutableMap.of("key1", "value1", "key2", "value2", "key3", "value3"));
 
         propertyConfigRepository.insert(propertyConfigToSave);
-        final MongoTemplate mongoTemplate = propertyConfigRepository.getMongoTemplate();
-        assertThat("Wrong number of config files in collection", mongoTemplate.count(null, PropertyConfig.class),
-                is(1L));
+        assertThat("Wrong number of config files in collection", countConfigFilesInCollection(), is(1L));
 
         propertyConfigRepository.insert(propertyConfigToSave);
         fail("Exception should be thrown if object already exist in database");
@@ -146,6 +143,19 @@ public class SavePropertyConfigIT {
                 is(equalTo(propertyConfigToSave.getLastModifiedAt())));
         assertThat("Loaded config has wrong properties", loadedPropertyConfig.getContent(), allOf(hasEntry("key1",
                 "value1"), hasEntry("key2", "value2"), hasEntry("key3", "value3")));
+    }
+
+    @Test
+    public void testExist() {
+        final String name = randomName();
+        assertThat("Config shouldn't exist in database", propertyConfigRepository.checkConfigExist(name), is(false));
+
+        final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(name, null,
+                ImmutableMap.of("key1", "value1"));
+        propertyConfigRepository.insert(propertyConfigToSave);
+
+        assertThat("Config should exist in database after it has been inserted",
+                propertyConfigRepository.checkConfigExist(name), is(true));
     }
 
     @After

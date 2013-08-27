@@ -9,8 +9,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
@@ -19,6 +21,8 @@ import static org.springframework.data.mongodb.core.query.Query.query;
  */
 @Repository
 public class MongoPropertyConfigRepository implements PropertyConfigRepository {
+
+    private static final String ID_FIELD = "_id";
 
     private final MongoTemplate mongoTemplate;
 
@@ -48,12 +52,20 @@ public class MongoPropertyConfigRepository implements PropertyConfigRepository {
     private void checkParentsExistInDatabase(final PropertyConfig propertyConfig) {
         final Set<String> parents = propertyConfig.getParents();
         // In database config name is stored in _id field
-        final long numberOfParentsInDatabase = mongoTemplate.count(query(where("_id").in(parents)),
+        final long numberOfParentsInDatabase = mongoTemplate.count(query(where(ID_FIELD).in(parents)),
                 PropertyConfig.class);
         if (numberOfParentsInDatabase != parents.size()) {
             throw new DataIntegrityViolationException(format("Can't insert new config '%1$s', " +
                     "because some of the parents are missing in database", propertyConfig.getName()));
         }
+    }
+
+    @Override
+    public boolean checkConfigExist(final String name) {
+        checkArgument(isNotBlank(name), "name must not be blank");
+        final long numberOfObjectsInDatabase = mongoTemplate.count(query(where(ID_FIELD).is(name)),
+                PropertyConfig.class);
+        return numberOfObjectsInDatabase == 1;
     }
 
 }
