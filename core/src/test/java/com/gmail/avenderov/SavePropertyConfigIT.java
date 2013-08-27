@@ -1,5 +1,6 @@
 package com.gmail.avenderov;
 
+import com.gmail.avenderov.api.repository.PropertyConfigRepository;
 import com.gmail.avenderov.mongo.data.PropertyConfig;
 import com.gmail.avenderov.mongo.data.PropertyConfigFactory;
 import com.google.common.collect.ImmutableMap;
@@ -9,12 +10,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * @author Alexey Venderov
@@ -23,19 +26,35 @@ public class SavePropertyConfigIT {
 
     private ConfigurableApplicationContext applicationContext;
 
-    private MongoTemplate mongoTemplate;
+    private PropertyConfigRepository propertyConfigRepository;
 
     @Before
     public void setUp() {
-        applicationContext = new ClassPathXmlApplicationContext("META-INF/spring/mongo-context.xml");
-        mongoTemplate = applicationContext.getBean("mongoTemplate", MongoTemplate.class);
+        applicationContext = new ClassPathXmlApplicationContext("META-INF/spring/banjo-context.xml");
+        propertyConfigRepository = applicationContext.getBean(PropertyConfigRepository.class);
         dropCollectionIfNecessary();
     }
 
     private void dropCollectionIfNecessary() {
+        final MongoTemplate mongoTemplate = propertyConfigRepository.getMongoTemplate();
         if (mongoTemplate.collectionExists(PropertyConfig.class)) {
             mongoTemplate.dropCollection(PropertyConfig.class);
         }
+    }
+
+    @Test(expected = DuplicateKeyException.class)
+    public void testSaveObjectThatAlreadyExistInDatabase() {
+        final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(
+                this.getClass().getSimpleName() + "_" + Long.toString(System.currentTimeMillis()), null,
+                ImmutableMap.of("key1", "value1", "key2", "value2", "key3", "value3"));
+
+        propertyConfigRepository.insert(propertyConfigToSave);
+        final MongoTemplate mongoTemplate = propertyConfigRepository.getMongoTemplate();
+        assertThat("Wrong number of config files in collection", mongoTemplate.count(null, PropertyConfig.class),
+                is(1L));
+
+        propertyConfigRepository.insert(propertyConfigToSave);
+        fail("Exception should be thrown if object already exist in database");
     }
 
     @Test
@@ -44,8 +63,9 @@ public class SavePropertyConfigIT {
                 this.getClass().getSimpleName() + "_" + Long.toString(System.currentTimeMillis()), null,
                 ImmutableMap.of("key1", "value1", "key2", "value2", "key3", "value3"));
 
-        mongoTemplate.save(propertyConfigToSave);
+        propertyConfigRepository.insert(propertyConfigToSave);
 
+        final MongoTemplate mongoTemplate = propertyConfigRepository.getMongoTemplate();
         assertThat("Collection for property config should exist", mongoTemplate.collectionExists(PropertyConfig.class),
                 is(true));
         final List<PropertyConfig> configs = mongoTemplate.findAll(PropertyConfig.class);

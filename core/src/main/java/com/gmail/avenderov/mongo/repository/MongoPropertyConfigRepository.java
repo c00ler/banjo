@@ -7,7 +7,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Repository;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * @author Alexey Venderov
@@ -23,10 +22,21 @@ public class MongoPropertyConfigRepository implements PropertyConfigRepository {
         this.mongoTemplate = mongoTemplate;
     }
 
+    @Override
+    public MongoTemplate getMongoTemplate() {
+        return mongoTemplate;
+    }
+
+    @Override
     public PropertyConfig insert(final PropertyConfig propertyConfig) {
         checkNotNull(propertyConfig, "propertyConfig must not be null");
 
-        mongoTemplate.save(propertyConfig);
+        if (propertyConfig.getParents().isEmpty()) {
+            mongoTemplate.insert(propertyConfig);
+        } else {
+            throw new UnsupportedOperationException("Not yet implemented");
+        }
+
         return propertyConfig;
     }
 
