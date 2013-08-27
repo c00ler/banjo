@@ -25,7 +25,6 @@ public class MongoPropertyConfigRepository implements PropertyConfigRepository {
 
     public PropertyConfig insert(final PropertyConfig propertyConfig) {
         checkNotNull(propertyConfig, "propertyConfig must not be null");
-        checkState(propertyConfig.getChildren().isEmpty(), "new config shouldn't have children");
 
         mongoTemplate.save(propertyConfig);
         return propertyConfig;

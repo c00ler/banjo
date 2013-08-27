@@ -33,13 +33,10 @@ public class PropertyConfig {
 
     private final Set<String> parents;
 
-    private final Set<String> children;
-
     private final Map<String, String> properties;
 
     public PropertyConfig(final String name, final int revision, final Date createdAt, final Date lastModifiedAt,
-                          final Set<String> parents, final Set<String> children,
-                          final Map<String, String> properties) {
+                          final Set<String> parents, final Map<String, String> properties) {
         checkArgument(isNotBlank(name), "name must not be null");
         checkArgument(revision > 0, "revision must be greater than zero");
         checkNotNull(createdAt, "createdAt must not be null");
@@ -51,8 +48,6 @@ public class PropertyConfig {
         this.createdAt = createdAt;
         this.lastModifiedAt = lastModifiedAt;
         this.parents = CollectionUtils.isNotEmpty(parents) ? ImmutableSet.copyOf(parents) : ImmutableSet.<String>of();
-        this.children =
-                CollectionUtils.isNotEmpty(children) ? ImmutableSet.copyOf(children) : ImmutableSet.<String>of();
         this.properties = ImmutableMap.copyOf(properties);
     }
 
@@ -78,10 +73,6 @@ public class PropertyConfig {
 
     public Set<String> getParents() {
         return parents;
-    }
-
-    public Set<String> getChildren() {
-        return children;
     }
 
     public Map<String, String> getContent() {

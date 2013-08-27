@@ -20,8 +20,7 @@ public class PropertyConfigFactory {
     }
 
     /**
-     * New config can't have children. Children will be added during adding config that will have this config as
-     * parent.
+     * Creates new properties config for insert into database.
      *
      * @param name
      * @param parents
@@ -35,8 +34,8 @@ public class PropertyConfigFactory {
 
         final Date now = Calendar.getInstance().getTime();
 
-        return new PropertyConfig(name, 1, now, now, removeNullAndBlankValue(parents), null,
-                Maps.filterEntries(properties, new Predicate<Map.Entry<String, String>>() {
+        return new PropertyConfig(name, 1, now, now, removeNullAndBlankValue(parents), Maps.filterEntries(properties,
+                new Predicate<Map.Entry<String, String>>() {
 
                     @Override
                     public boolean apply(final Map.Entry<String, String> input) {

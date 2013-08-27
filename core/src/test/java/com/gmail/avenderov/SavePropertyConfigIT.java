@@ -55,7 +55,6 @@ public class SavePropertyConfigIT {
         assertThat("Loaded config has wrong name", loadedPropertyConfig.getName(),
                 is(equalTo(propertyConfigToSave.getName())));
         assertThat("There should be no parents in loaded config", loadedPropertyConfig.getParents(), hasSize(0));
-        assertThat("There should be no children in loaded config", loadedPropertyConfig.getChildren(), hasSize(0));
         assertThat("Loaded config has wrong revision", loadedPropertyConfig.getRevision(), is(1));
         assertThat("Loaded config has wrong createAt value", loadedPropertyConfig.getCreatedAt(),
                 is(equalTo(propertyConfigToSave.getCreatedAt())));

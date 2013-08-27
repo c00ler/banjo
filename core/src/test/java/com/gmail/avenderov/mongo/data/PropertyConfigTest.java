@@ -17,7 +17,7 @@ public class PropertyConfigTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testPropertiesAreImmutable() {
         final Date now = Calendar.getInstance().getTime();
-        final PropertyConfig propertyConfig = new PropertyConfig("test", 1, now, now, null, null,
+        final PropertyConfig propertyConfig = new PropertyConfig("test", 1, now, now, null,
                 new HashMap<String, String>() {{
                     put("key1", "value1");
                 }});
@@ -33,24 +33,11 @@ public class PropertyConfigTest {
         final Date now = Calendar.getInstance().getTime();
         final PropertyConfig propertyConfig = new PropertyConfig("test", 1, now, now, new HashSet<String>() {{
             add("parent");
-        }}, null, ImmutableMap.of("key1", "value1"));
+        }}, ImmutableMap.of("key1", "value1"));
 
         final Set<String> parents = propertyConfig.getParents();
         assertThat("Wrong number of parents in config", parents, hasSize(1));
         parents.add("anotherParent");
-        fail("Returned set has to be immutable");
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testChildrenAreImmutable() {
-        final Date now = Calendar.getInstance().getTime();
-        final PropertyConfig propertyConfig = new PropertyConfig("test", 1, now, now, null, new HashSet<String>() {{
-            add("child");
-        }}, ImmutableMap.of("key1", "value1"));
-
-        final Set<String> children = propertyConfig.getChildren();
-        assertThat("Wrong number of children in config", children, hasSize(1));
-        children.add("anotherChild");
         fail("Returned set has to be immutable");
     }
 

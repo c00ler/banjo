@@ -52,7 +52,6 @@ public class PropertyConfigFactoryTest {
         assertThat("Created and modified dates should be equal", propertyConfig.getCreatedAt(),
                 is(equalTo(propertyConfig.getLastModifiedAt())));
         assertThat("Wrong config type", propertyConfig.getConfigType(), is(equalTo(Config.Type.TEXT)));
-        assertThat("New config shouldn't have children", propertyConfig.getChildren(), hasSize(0));
     }
 
 }
