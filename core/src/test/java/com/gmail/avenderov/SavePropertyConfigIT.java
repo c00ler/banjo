@@ -4,12 +4,15 @@ import com.gmail.avenderov.api.repository.PropertyConfigRepository;
 import com.gmail.avenderov.mongo.data.PropertyConfig;
 import com.gmail.avenderov.mongo.data.PropertyConfigFactory;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
@@ -18,6 +21,8 @@ import java.util.List;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.data.mongodb.core.query.Query.query;
 
 /**
  * @author Alexey Venderov
@@ -42,10 +47,70 @@ public class SavePropertyConfigIT {
         }
     }
 
+    private static String randomName() {
+        return SavePropertyConfigIT.class.getSimpleName() + "_" + RandomStringUtils.randomAlphanumeric(20);
+    }
+
+    @Test
+    public void testInsertConfigWithParents() {
+        final MongoTemplate mongoTemplate = propertyConfigRepository.getMongoTemplate();
+
+        final PropertyConfig parent1PropertyConfig = PropertyConfigFactory.newPropertyConfig(randomName(), null,
+                ImmutableMap.of("key1", "value1"));
+        propertyConfigRepository.insert(parent1PropertyConfig);
+        assertThat("Wrong number of config files in collection", mongoTemplate.count(null, PropertyConfig.class),
+                is(1L));
+
+        final PropertyConfig parent2PropertyConfig = PropertyConfigFactory.newPropertyConfig(randomName(), null,
+                ImmutableMap.of("key2", "value2"));
+        propertyConfigRepository.insert(parent2PropertyConfig);
+        assertThat("Wrong number of config files in collection", mongoTemplate.count(null, PropertyConfig.class),
+                is(2L));
+
+        final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(randomName(),
+                ImmutableSet.of(parent1PropertyConfig.getName(), parent2PropertyConfig.getName()),
+                ImmutableMap.of("key3", "value3"));
+        propertyConfigRepository.insert(propertyConfigToSave);
+        assertThat("Wrong number of config files in collection", mongoTemplate.count(null, PropertyConfig.class),
+                is(3L));
+        final PropertyConfig loadedPropertyConfig = mongoTemplate.findOne(query(where("_id").is(propertyConfigToSave
+                .getName())), PropertyConfig.class);
+        assertThat("Wrong parents in loaded config", loadedPropertyConfig.getParents(),
+                contains(parent1PropertyConfig.getName(), parent2PropertyConfig.getName()));
+        assertThat("Loaded config has wrong revision", loadedPropertyConfig.getRevision(), is(1));
+    }
+
+    @Test(expected = DataIntegrityViolationException.class)
+    public void testInsertConfigWhenNotAllParentsExistInDatabase() {
+        final PropertyConfig parentPropertyConfig = PropertyConfigFactory.newPropertyConfig(randomName(), null,
+                ImmutableMap.of("key1", "value1"));
+
+        propertyConfigRepository.insert(parentPropertyConfig);
+        final MongoTemplate mongoTemplate = propertyConfigRepository.getMongoTemplate();
+        assertThat("Wrong number of config files in collection", mongoTemplate.count(null, PropertyConfig.class),
+                is(1L));
+
+        final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(randomName(),
+                ImmutableSet.of(parentPropertyConfig.getName(), "parent"),
+                ImmutableMap.of("key2", "value2", "key3", "value3"));
+
+        propertyConfigRepository.insert(propertyConfigToSave);
+        fail("Exception should be thrown if not all parents exist in database");
+    }
+
+    @Test(expected = DataIntegrityViolationException.class)
+    public void testInsertConfigWhenParentDoesNotExistInDatabase() {
+        final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(randomName(),
+                ImmutableSet.of("parent"),
+                ImmutableMap.of("key1", "value1", "key2", "value2", "key3", "value3"));
+
+        propertyConfigRepository.insert(propertyConfigToSave);
+        fail("Exception should be thrown if parent doesn't exist in database");
+    }
+
     @Test(expected = DuplicateKeyException.class)
-    public void testSaveObjectThatAlreadyExistInDatabase() {
-        final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(
-                this.getClass().getSimpleName() + "_" + Long.toString(System.currentTimeMillis()), null,
+    public void testInsertObjectThatAlreadyExistInDatabase() {
+        final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(randomName(), null,
                 ImmutableMap.of("key1", "value1", "key2", "value2", "key3", "value3"));
 
         propertyConfigRepository.insert(propertyConfigToSave);
@@ -58,9 +123,8 @@ public class SavePropertyConfigIT {
     }
 
     @Test
-    public void testSavePropertyConfig() {
-        final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(
-                this.getClass().getSimpleName() + "_" + Long.toString(System.currentTimeMillis()), null,
+    public void testInsertPropertyConfig() {
+        final PropertyConfig propertyConfigToSave = PropertyConfigFactory.newPropertyConfig(randomName(), null,
                 ImmutableMap.of("key1", "value1", "key2", "value2", "key3", "value3"));
 
         propertyConfigRepository.insert(propertyConfigToSave);
